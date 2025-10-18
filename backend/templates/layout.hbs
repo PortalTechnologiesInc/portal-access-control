@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}} - Portal Access Control</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Minecraftia&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        {{#if show_nav}}
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>Portal Access Control</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/logs">Logs</a>
+                <a href="/keys">Keys</a>
+                <a href="/invites">Invites</a>
+                <a href="/settings">Settings</a>
+                <form method="post" action="/logout" class="logout-form">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
+        </nav>
+        {{/if}}
+        
+        <main class="main-content">
+            {{#if error_message}}
+            <div class="error-message">
+                {{error_message}}
+            </div>
+            {{/if}}
+            
+            {{#if success_message}}
+            <div class="success-message">
+                {{success_message}}
+            </div>
+            {{/if}}
+            
+            {{{content}}}
+        </main>
+    </div>
+</body>
+</html>

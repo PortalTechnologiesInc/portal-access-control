@@ -1,0 +1,36 @@
+{{#*inline "content"}}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h2>Portal Access Control</h2>
+            <p>Enter your password to continue</p>
+        </div>
+        
+        <form method="post" action="/login" class="login-form">
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                >
+            </div>
+            
+            <button type="submit" class="login-btn">
+                Login
+            </button>
+        </form>
+        
+        {{#if error}}
+        <div class="error-message">
+            {{error}}
+        </div>
+        {{/if}}
+    </div>
+</div>
+{{/inline}}
+
+{{> layout title="Login" show_nav=false}}

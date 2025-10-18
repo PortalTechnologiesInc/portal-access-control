@@ -1,14 +1,18 @@
-mod controllers;
 mod auth;
+mod controllers;
 
 use anyhow::Result;
 use dotenvy::dotenv;
-use rocket::{routes, Build, Rocket};
+use rocket::fs::{FileServer, relative};
+use rocket::{Build, Rocket, routes};
 use rocket_cors::{AllowedHeaders, AllowedOrigins, CorsOptions};
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use rocket_dyn_templates::Template;
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
-use crate::controllers::access::{health_check, login, protected_endpoint, logout};
 use crate::auth::JWTSecret;
+use crate::controllers::access::{
+    health_check, login, login_page, logout, logs_page, protected_endpoint,
+};
 
 async fn db_setup() -> Result<Pool<Postgres>> {
     dotenv().ok();
@@ -22,16 +26,19 @@ async fn db_setup() -> Result<Pool<Postgres>> {
 fn build_rocket(pool: Pool<Postgres>) -> Rocket<Build> {
     // Load environment variables
     dotenv().ok();
-    let jwt_secret = std::env::var("JWT_SECRET")
-        .expect("JWT_SECRET must be set");
-    
+    let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+
     let cors = CorsOptions::default()
         .allowed_origins(AllowedOrigins::all())
         .allowed_methods(
-            vec![rocket::http::Method::Get, rocket::http::Method::Post, rocket::http::Method::Options]
-                .into_iter()
-                .map(From::from)
-                .collect(),
+            vec![
+                rocket::http::Method::Get,
+                rocket::http::Method::Post,
+                rocket::http::Method::Options,
+            ]
+            .into_iter()
+            .map(From::from)
+            .collect(),
         )
         .allowed_headers(AllowedHeaders::some(&[
             "Content-Type",
@@ -44,12 +51,23 @@ fn build_rocket(pool: Pool<Postgres>) -> Rocket<Build> {
         .expect("Error creating CORS fairing");
 
     rocket::build()
-        .configure(rocket::Config::figment()
-            .merge(("secret_key", jwt_secret.as_bytes())))
+        .configure(rocket::Config::figment().merge(("secret_key", jwt_secret.as_bytes())))
         .manage(pool)
         .manage(JWTSecret::new(jwt_secret))
-        .mount("/", routes![health_check, login, protected_endpoint, logout])
+        .mount(
+            "/",
+            routes![
+                health_check,
+                login_page,
+                login,
+                logs_page,
+                protected_endpoint,
+                logout
+            ],
+        )
+        .mount("/static", FileServer::from(relative!("static")))
         .attach(cors)
+        .attach(Template::fairing())
 }
 
 #[rocket::main]
