@@ -1,11 +1,11 @@
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use chrono::{Duration, Utc};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use rocket::{
-    http::Status,
-    request::{FromRequest, Outcome, Request},
     State,
+    http::{Cookie, CookieJar, Status},
+    request::{FromRequest, Outcome, Request},
 };
 use serde::{Deserialize, Serialize};
-use chrono::{Duration, Utc};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -31,19 +31,27 @@ impl JWTSecret {
     pub fn new(secret: String) -> Self {
         Self(secret)
     }
-    
+
     pub fn get_secret(&self) -> &str {
         &self.0
     }
 }
 
 pub fn create_token(claims: &Claims, secret: &str) -> Result<String, jsonwebtoken::errors::Error> {
-    encode(&Header::default(), claims, &EncodingKey::from_secret(secret.as_ref()))
+    encode(
+        &Header::default(),
+        claims,
+        &EncodingKey::from_secret(secret.as_ref()),
+    )
 }
 
 pub fn validate_token(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let validation = Validation::new(Algorithm::HS256);
-    let token_data = decode::<Claims>(token, &DecodingKey::from_secret(secret.as_ref()), &validation)?;
+    let token_data = decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(secret.as_ref()),
+        &validation,
+    )?;
     Ok(token_data.claims)
 }
 
@@ -60,12 +68,18 @@ impl<'r> FromRequest<'r> for AuthenticatedUser {
             _ => return Outcome::Error((Status::InternalServerError, ())),
         };
 
-        let auth_header = req.headers().get_one("Authorization");
-        let token = match auth_header {
-            Some(header) if header.starts_with("Bearer ") => {
-                &header[7..]
-            }
-            _ => return Outcome::Error((Status::Unauthorized, ())),
+        // Try to get the token from cookies first
+        let cookies = req.guard::<&CookieJar<'_>>().await;
+        let cookies = match cookies {
+            Outcome::Success(cookies) => cookies,
+            _ => return Outcome::Error((Status::InternalServerError, ())),
+        };
+
+        let token = cookies.get("auth_token").map(|cookie| cookie.value());
+
+        let token = match token {
+            Some(token) => token,
+            None => return Outcome::Error((Status::Unauthorized, ())),
         };
 
         match validate_token(token, jwt_secret.get_secret()) {
@@ -73,4 +87,18 @@ impl<'r> FromRequest<'r> for AuthenticatedUser {
             Err(_) => Outcome::Error((Status::Unauthorized, ())),
         }
     }
+}
+
+pub fn set_auth_cookie(cookies: &CookieJar<'_>, token: String) {
+    let mut cookie = Cookie::new("auth_token", token);
+    cookie.set_http_only(true);
+    cookie.set_secure(true);
+    cookie.set_same_site(rocket::http::SameSite::Strict);
+    cookie.set_max_age(rocket::time::Duration::hours(24));
+
+    cookies.add(cookie);
+}
+
+pub fn remove_auth_cookie(cookies: &CookieJar<'_>) {
+    cookies.remove(Cookie::new("auth_token", ""));
 }

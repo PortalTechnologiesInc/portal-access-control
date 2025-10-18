@@ -7,7 +7,7 @@ use rocket::{routes, Build, Rocket};
 use rocket_cors::{AllowedHeaders, AllowedOrigins, CorsOptions};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
-use crate::controllers::access::{health_check, login, protected_endpoint};
+use crate::controllers::access::{health_check, login, protected_endpoint, logout};
 use crate::auth::JWTSecret;
 
 async fn db_setup() -> Result<Pool<Postgres>> {
@@ -37,17 +37,18 @@ fn build_rocket(pool: Pool<Postgres>) -> Rocket<Build> {
             "Content-Type",
             "Accept",
             "User-Agent",
-            "Authorization",
         ]))
-        .allow_credentials(false)
+        .allow_credentials(true)
         .max_age(Some(86400)) // 24 hours
         .to_cors()
         .expect("Error creating CORS fairing");
 
     rocket::build()
+        .configure(rocket::Config::figment()
+            .merge(("secret_key", jwt_secret.as_bytes())))
         .manage(pool)
         .manage(JWTSecret::new(jwt_secret))
-        .mount("/", routes![health_check, login, protected_endpoint])
+        .mount("/", routes![health_check, login, protected_endpoint, logout])
         .attach(cors)
 }
 
