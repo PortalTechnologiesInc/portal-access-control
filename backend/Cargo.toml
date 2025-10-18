@@ -9,3 +9,7 @@ sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio", "time"] }
 dotenvy = "0.15.7"
 anyhow = "1.0.100"
 rocket_cors = "0.6.0"
+jsonwebtoken = "9.3"
+chrono = { version = "0.4", features = ["serde"] }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
