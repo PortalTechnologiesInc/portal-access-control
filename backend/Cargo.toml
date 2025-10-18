@@ -1,0 +1,11 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rocket = { version = "0.5.1", features = ["json"] }
+sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio", "time"] }
+dotenvy = "0.15.7"
+anyhow = "1.0.100"
+rocket_cors = "0.6.0"
