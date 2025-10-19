@@ -12,6 +12,7 @@ use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use crate::auth::JWTSecret;
 use crate::controllers::access::{
     health_check, login, login_page, logout, logs_page, protected_endpoint,
+    keys_page, add_key, toggle_key, delete_key,
 };
 
 async fn db_setup() -> Result<Pool<Postgres>> {
@@ -62,7 +63,11 @@ fn build_rocket(pool: Pool<Postgres>) -> Rocket<Build> {
                 login,
                 logs_page,
                 protected_endpoint,
-                logout
+                logout,
+                keys_page,
+                add_key,
+                toggle_key,
+                delete_key
             ],
         )
         .mount("/static", FileServer::from(relative!("static")))
