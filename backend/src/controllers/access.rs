@@ -155,12 +155,7 @@ pub async fn add_key(
 ) -> Result<Redirect, Template> {
     // Validate npub format
     if !key_request.npub.starts_with("npub1") || key_request.npub.len() != 63 {
-        return Err(Template::render(
-            "keys",
-            context! {
-                error_message: "Invalid public key format. Must be a valid npub1 key."
-            },
-        ));
+        return Err(render_keys_with_error(pool, "Invalid public key format. Must be a valid npub1 key.").await);
     }
 
     match insert_key(
@@ -172,12 +167,7 @@ pub async fn add_key(
     .await
     {
         Ok(_) => Ok(Redirect::to("/keys")),
-        Err(_) => Err(Template::render(
-            "keys",
-            context! {
-                error_message: "Failed to add key. It may already exist."
-            },
-        )),
+        Err(_) => Err(render_keys_with_error(pool, "Failed to add key. It may already exist.").await),
     }
 }
 
@@ -190,23 +180,13 @@ pub async fn toggle_key(
     let uuid = match Uuid::parse_str(&key_id) {
         Ok(uuid) => uuid,
         Err(_) => {
-            return Err(Template::render(
-                "keys",
-                context! {
-                    error_message: "Invalid key ID"
-                },
-            ));
+            return Err(render_keys_with_error(pool, "Invalid key ID").await);
         }
     };
 
     match toggle_key_status(pool, uuid).await {
         Ok(_) => Ok(Redirect::to("/keys")),
-        Err(_) => Err(Template::render(
-            "keys",
-            context! {
-                error_message: "Failed to toggle key status"
-            },
-        )),
+        Err(_) => Err(render_keys_with_error(pool, "Failed to toggle key status").await),
     }
 }
 
@@ -219,23 +199,35 @@ pub async fn delete_key(
     let uuid = match Uuid::parse_str(&key_id) {
         Ok(uuid) => uuid,
         Err(_) => {
-            return Err(Template::render(
-                "keys",
-                context! {
-                    error_message: "Invalid key ID"
-                },
-            ));
+            return Err(render_keys_with_error(pool, "Invalid key ID").await);
         }
     };
 
     match delete_key_by_id(pool, uuid).await {
         Ok(_) => Ok(Redirect::to("/keys")),
-        Err(_) => Err(Template::render(
+        Err(_) => Err(render_keys_with_error(pool, "Failed to delete key").await),
+    }
+}
+
+// Helper function to render keys template with error message
+async fn render_keys_with_error(
+    pool: &Pool<Postgres>,
+    error_message: &str,
+) -> Template {
+    match get_all_keys(pool).await {
+        Ok(keys) => Template::render(
             "keys",
             context! {
-                error_message: "Failed to delete key"
+                keys: keys,
+                error_message: error_message
             },
-        )),
+        ),
+        Err(_) => Template::render(
+            "keys",
+            context! {
+                error_message: error_message
+            },
+        ),
     }
 }
 

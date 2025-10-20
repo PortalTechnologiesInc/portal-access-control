@@ -12,8 +12,8 @@ This document outlines the step-by-step implementation plan for building a Rust 
 - ✅ Basic Rocket setup with PostgreSQL connection
 - ✅ Health check endpoint
 - ✅ CORS configuration
-- ❌ Authentication system
-- ❌ Database schema
+- ✅ Authentication system
+- ✅ Database schema
 - ❌ Core models and routes
 - ❌ Templates and UI
 
