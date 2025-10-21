@@ -28,7 +28,10 @@ pub fn health_check(_pool_state: &State<Pool<Postgres>>) -> Result<Json<String>,
 }
 
 #[get("/login")]
-pub fn login_page() -> Template {
+pub fn login_page(user: AuthenticatedUser) -> Template {
+    if user.is_authenticated() {
+        return Redirect::to("/logs");
+    }
     Template::render("login", context! {})
 }
 
@@ -219,4 +222,14 @@ async fn render_keys_with_error(
             },
         ),
     }
+}
+
+#[catch(401)]
+pub fn unauthorized_handler(_req: &Request) -> Redirect {
+    Redirect::to("/login")
+}
+
+#[catch(404)]
+pub fn not_found_handler(_req: &Request) -> Redirect {
+    Redirect::to("/logs")
 }

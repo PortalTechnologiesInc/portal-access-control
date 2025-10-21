@@ -82,6 +82,7 @@ fn build_rocket(pool: Pool<Postgres>) -> Rocket<Build> {
         .mount("/static", FileServer::from(relative!("static")))
         .attach(cors)
         .attach(Template::fairing())
+        .register("/", catchers![unauthorized_handler, not_found_handler])
 }
 
 async fn build_access_ontrol(pool: Pool<Postgres>) {
