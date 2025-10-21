@@ -15,3 +15,6 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 rocket_dyn_templates = { version = "0.2.0", features = ["handlebars"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
+access-control = { git = "https://github.com/afilini/intellim-unlock-doors" }
+portal = { git = "https://github.com/PortalTechnologiesInc/lib.git" }
+sdk = { git = "https://github.com/PortalTechnologiesInc/lib.git" }

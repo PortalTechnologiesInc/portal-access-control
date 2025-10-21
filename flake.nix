@@ -202,6 +202,8 @@
             buildInputs = with pkgs; [
               rust
               rust-analyzer
+              openssl
+              pkg-config
               protobuf
               docker
               sqlx-cli
