@@ -2,6 +2,7 @@ use crate::auth::{
     AuthenticatedUser, Claims, JWTSecret, create_token, remove_auth_cookie, set_auth_cookie,
 };
 use crate::database::helpers::{get_all_keys, insert_key, toggle_key_status, delete_key_by_id};
+use rocket::{catch, Request};
 use rocket::{
     State, form::Form, get, http::CookieJar, http::Status, post, response::Redirect,
     serde::json::Json,
@@ -29,9 +30,6 @@ pub fn health_check(_pool_state: &State<Pool<Postgres>>) -> Result<Json<String>,
 
 #[get("/login")]
 pub fn login_page(user: AuthenticatedUser) -> Template {
-    if user.is_authenticated() {
-        return Redirect::to("/logs");
-    }
     Template::render("login", context! {})
 }
 

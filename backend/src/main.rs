@@ -7,7 +7,7 @@ use dotenvy::dotenv;
 use portal::nostr::nips::nip19::ToBech32;
 use rocket::fs::{FileServer, relative};
 use rocket::tokio::sync::Mutex;
-use rocket::{Build, Rocket, routes};
+use rocket::{catchers, routes, Build, Rocket};
 use rocket_cors::{AllowedHeaders, AllowedOrigins, CorsOptions};
 use rocket_dyn_templates::Template;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
@@ -16,8 +16,7 @@ use std::sync::Arc;
 
 use crate::auth::JWTSecret;
 use crate::controllers::access::{
-    add_key, delete_key, health_check, keys_page, login, login_page, logout, logs_page,
-    protected_endpoint, toggle_key,
+    add_key, delete_key, health_check, keys_page, login, login_page, logout, logs_page, not_found_handler, protected_endpoint, toggle_key, unauthorized_handler
 };
 use crate::database::helpers::is_key_enabled;
 
@@ -155,9 +154,10 @@ async fn build_access_ontrol(pool: Pool<Postgres>) {
                                 continue;
                             }
                             Ok(event) => {
-                                let npub = event.main_key;
+                                let pub_key = event.main_key;
                                 
-                                match is_key_enabled(&pool, npub.to_bech32().expect("Infallible").as_str()).await {
+                                println!("Trying with this npub: {}", pub_key.to_bech32().unwrap());
+                                match is_key_enabled(&pool, pub_key.to_bech32().expect("Infallible").as_str()).await {
                                     Ok(true) => {
                                         println!("✅ Key is enabled, proceeding with authentication");
                                     }
@@ -173,7 +173,7 @@ async fn build_access_ontrol(pool: Pool<Postgres>) {
                                 }
 
                                 // Authenticate the key obtained from the notification
-                                match bg_portal.authenticate_key(npub, vec![]).await {
+                                match bg_portal.authenticate_key(pub_key, vec![]).await {
                                     Ok(response) => {
                                         match response.status {
                                             AuthResponseStatus::Approved { .. } => {
